@@ -1,6 +1,12 @@
 org.owasp.esapi.ESAPI.initialize();
 
+// var latestPostTime = new Date();
+var latestPostTime;
+
+var initialLoad = true;
+
 var retrieveData = function() {
+  // $('#chats').empty();
   $.ajax({
     // This is the url you should use to communicate with the parse API server.
     url: 'https://api.parse.com/1/classes/chatterbox',
@@ -10,12 +16,24 @@ var retrieveData = function() {
     success: function (data) {
       console.log(data);
       _.each(data.results, function(item) {
-        $('#chats').append($('<div>' + 
-          $ESAPI.encoder().encodeForHTML(item.text)
-          + '</div>'));
+        if (initialLoad) {
+          $('#chats').append($('<div class="username">' 
+            + $ESAPI.encoder().encodeForHTML(item.username)
+            + '</div><div class="message ">' 
+            + $ESAPI.encoder().encodeForHTML(item.text)
+            + '</div>'));
+          latestPostDate = item.createdAt;
+          
+        } else if (item.createdAt > latestPostTime) {
+          latestPostTime = item.createdAt;
+          $('#chats').prepend($('<div class="username">' 
+            + $ESAPI.encoder().encodeForHTML(item.username)
+            + '</div><div class="message ">' 
+            + $ESAPI.encoder().encodeForHTML(item.text)
+            + '</div>'));
+        }
       });
-
-
+      initialLoad = false;
     },
     error: function (data) {
       // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
@@ -23,9 +41,6 @@ var retrieveData = function() {
     }
   });
 };
-
-// setInterval(retrieveData, 2000);
-
 
 var postMessage = function(message) {
   $.ajax({
@@ -44,12 +59,23 @@ var postMessage = function(message) {
       console.error('chatterbox: Failed to send message');
     }
   });
+  var time = new Date();
 };
 
-postMessage({username:'eSquared', text:'eSquared test 2',roomname:'4chan'});
+// retrieveData();
 
+
+function testResults(form) {
+  var msg = form.inputbox.value;
+  var username = window.location.search.slice(10);
+
+  var msgJSON = {
+    username: username, 
+    text: msg,
+    roomname:'4chan'
+  };
+
+  postMessage(msgJSON);
+}
 retrieveData();
-
-// $.post("https://api.parse.com/1/classes/chatterbox", function(data) {
-//   $("#chats").html(data);
-// });
+setInterval(retrieveData, 2000);

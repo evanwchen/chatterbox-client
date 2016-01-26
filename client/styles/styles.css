@@ -2,7 +2,8 @@ body {
     background: #eee;
     text-align: center;
     padding: 0 25px;
-    font-family: arial, sans-serif;
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+    font-weight: 300;
 }
 
 #main, #chats {
@@ -81,4 +82,16 @@ form input[type=text] {
 
 .spinner img {
     padding: 10px;
+}
+
+.username {
+    font-weight: 600;
+    /*font-family: Georgia serif;*/
+    color: gray;
+    font-size:10pt;
+}
+
+.message {
+    /*margin-left:10px;*/
+    margin-bottom:10px;
 }

@@ -2,6 +2,12 @@ var latestPostTime;
 
 var initialLoad = true;
 
+var chatRooms = {
+  all: 'all'
+};
+
+var room = chatRooms.all;
+
 org.owasp.esapi.ESAPI.initialize();
 
 var app = {
@@ -22,6 +28,7 @@ var app = {
   },
 
   fetch: function() {
+    console.log(room);
     $.ajax({
       url: app.server,
       type: 'GET',
@@ -29,21 +36,46 @@ var app = {
       contentType: 'application/json',
       success: function (data) {
         _.each(data.results, function(item) {
+          if (chatRooms[item.roomname] === undefined) {
+            chatRooms[item.roomname] = item.roomname;
+            $('.chatrooms').append('<option value="'+ item.roomname + '">' + item.roomname + '</option>');
+          }
           if (initialLoad) {
-            $('#chats').append($('<div class="username">' 
-              + $ESAPI.encoder().encodeForHTML(item.username)
-              + '</div><div class="message ">' 
-              + $ESAPI.encoder().encodeForHTML(item.text)
-              + '</div>'));
-            latestPostTime = item.createdAt;
-            
+            if (room === 'all') {
+              $('#chats').append($('<div class="username">' 
+                + $ESAPI.encoder().encodeForHTML(item.username)
+                + '</div><div class="message">' 
+                + $ESAPI.encoder().encodeForHTML(item.text)
+                + item.roomname
+                + '</div>'));
+              latestPostTime = item.createdAt;
+            } else if (item.roomname === room) {
+                $('#chats').append($('<div class="username">' 
+                + $ESAPI.encoder().encodeForHTML(item.username)
+                + '</div><div class="message">' 
+                + $ESAPI.encoder().encodeForHTML(item.text)
+                + item.roomname
+                + '</div>'));
+              latestPostTime = item.createdAt;
+            }
           } else if (item.createdAt > latestPostTime) {
-            latestPostTime = item.createdAt;
+            if (room === 'all') {
+              latestPostTime = item.createdAt;
             $('#chats').prepend($('<div class="username">' 
               + $ESAPI.encoder().encodeForHTML(item.username)
-              + '</div><div class="message ">' 
+              + '</div><div class="message">' 
               + $ESAPI.encoder().encodeForHTML(item.text)
+              + item.roomname
               + '</div>'));
+            } else if (item.roomname === room) {
+              latestPostTime = item.createdAt;
+              $('#chats').prepend($('<div class="username">' 
+                + $ESAPI.encoder().encodeForHTML(item.username)
+                + '</div><div class="message">' 
+                + $ESAPI.encoder().encodeForHTML(item.text)
+                + item.roomname
+                + '</div>'));
+            }
           }
         });
         initialLoad = false;
@@ -62,12 +94,19 @@ var app = {
 
   addMessage: function(msg) {
     app.send(msg);
+  },
+
+  changeRooms: function(roomName) {
+    room = roomName;
+    initialLoad = true;
+    $('#chats').empty();
+    $('.chatrooms').val(roomName);
   }
 };
 
 app.fetch();
 
-setInterval(app.fetch, 2000);
+var processID = setInterval(app.fetch, 2000);
 
 function testResults(form) {
   var msg = form.inputbox.value;
@@ -80,4 +119,13 @@ function testResults(form) {
   };
 
   app.send(msgJSON);
+}
+
+// $('.chatrooms').change(function(){
+//   var newRoom = $this.value;
+//   changeRooms(newRoom);
+// });
+
+function getval(sel) {
+  app.changeRooms(sel.value);
 }

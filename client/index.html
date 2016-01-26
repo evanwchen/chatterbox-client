@@ -25,11 +25,12 @@
     <div id="main">
       <h1>chatterbox</h1>
       Chatrooms:<select class="chatrooms" onchange="getval(this);">
+        <option value="all">All</option>
       </select>
 
       <form>
         <input type="text" name="inputbox" placeholder="Post message here" value="">
-        <input type="button" name="button" value="click" onClick="testResults(this.form)">
+        <input type="button" name="button" value="click" onClick="post(this.form)">
       </form>
     </div>
     <div id="chats"></div>

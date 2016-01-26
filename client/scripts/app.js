@@ -1,4 +1,4 @@
-var latestPostTime;
+var latestPostTime = "0";
 
 var initialLoad = true;
 
@@ -20,6 +20,8 @@ var app = {
       data: JSON.stringify(message),
       contentType: 'application/json',
       success: function (data) {
+        //latestPostTime = data.createdAt;
+        console.log("succes, data:",data);
       },
       error: function (data) {
         console.error('chatterbox: Failed to send message');
@@ -36,11 +38,16 @@ var app = {
       contentType: 'application/json',
       success: function (data) {
         _.each(data.results, function(item) {
-          if (chatRooms[item.roomname] === undefined) {
+          if (chatRooms[item.roomname] === undefined && item.roomname !== undefined) {
             chatRooms[item.roomname] = item.roomname;
             $('.chatrooms').append('<option value="'+ item.roomname + '">' + item.roomname + '</option>');
           }
+          console.log('latest ', latestPostTime);
+          console.log('item createdAt ', item.createdAt)
           if (initialLoad) {
+            if (item.createdAt > latestPostTime) {
+              latestPostTime = item.createdAt;
+            }
             if (room === 'all') {
               $('#chats').append($('<div class="username">' 
                 + $ESAPI.encoder().encodeForHTML(item.username)
@@ -48,27 +55,27 @@ var app = {
                 + $ESAPI.encoder().encodeForHTML(item.text)
                 + item.roomname
                 + '</div>'));
-              latestPostTime = item.createdAt;
             } else if (item.roomname === room) {
-                $('#chats').append($('<div class="username">' 
+              // console.log(item.text);
+              $('#chats').append($('<div class="username">' 
                 + $ESAPI.encoder().encodeForHTML(item.username)
                 + '</div><div class="message">' 
                 + $ESAPI.encoder().encodeForHTML(item.text)
                 + item.roomname
                 + '</div>'));
-              latestPostTime = item.createdAt;
             }
           } else if (item.createdAt > latestPostTime) {
+            latestPostTime = item.createdAt;
+            console.log('reached update condition');
             if (room === 'all') {
-              latestPostTime = item.createdAt;
-            $('#chats').prepend($('<div class="username">' 
-              + $ESAPI.encoder().encodeForHTML(item.username)
-              + '</div><div class="message">' 
-              + $ESAPI.encoder().encodeForHTML(item.text)
-              + item.roomname
-              + '</div>'));
+              $('#chats').prepend($('<div class="username">' 
+                + $ESAPI.encoder().encodeForHTML(item.username)
+                + '</div><div class="message">' 
+                + $ESAPI.encoder().encodeForHTML(item.text)
+                + item.roomname
+                + '</div>'));
             } else if (item.roomname === room) {
-              latestPostTime = item.createdAt;
+              // console.log(item.text + " 2nd?");
               $('#chats').prepend($('<div class="username">' 
                 + $ESAPI.encoder().encodeForHTML(item.username)
                 + '</div><div class="message">' 
@@ -78,6 +85,8 @@ var app = {
             }
           }
         });
+        // console.log('latest:',latestPostTime);
+
         initialLoad = false;
       },
       error: function (data) {
@@ -101,6 +110,7 @@ var app = {
     initialLoad = true;
     $('#chats').empty();
     $('.chatrooms').val(roomName);
+    app.fetch();
   }
 };
 
@@ -108,24 +118,28 @@ app.fetch();
 
 var processID = setInterval(app.fetch, 2000);
 
-function testResults(form) {
+function post(form) {
   var msg = form.inputbox.value;
   var username = window.location.search.slice(10);
 
   var msgJSON = {
     username: username, 
     text: msg,
-    roomname:'4chan'
+    roomname: room
   };
 
   app.send(msgJSON);
 }
 
-// $('.chatrooms').change(function(){
-//   var newRoom = $this.value;
-//   changeRooms(newRoom);
-// });
-
 function getval(sel) {
   app.changeRooms(sel.value);
+}
+
+function appendMessage(item) {
+  $('#chats').append($('<div class="username">' 
+    + $ESAPI.encoder().encodeForHTML(item.username)
+    + '</div><div class="message">' 
+    + $ESAPI.encoder().encodeForHTML(item.text)
+    + item.roomname
+    + '</div>'));
 }

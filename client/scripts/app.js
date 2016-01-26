@@ -8,6 +8,10 @@ var chatRooms = {
 
 var room = chatRooms.all;
 
+var friends = {};
+
+var filterFriends = true;
+
 org.owasp.esapi.ESAPI.initialize();
 
 var app = {
@@ -30,7 +34,6 @@ var app = {
   },
 
   fetch: function() {
-    console.log(room);
     $.ajax({
       url: app.server,
       type: 'GET',
@@ -42,51 +45,24 @@ var app = {
             chatRooms[item.roomname] = item.roomname;
             $('.chatrooms').append('<option value="'+ item.roomname + '">' + item.roomname + '</option>');
           }
-          console.log('latest ', latestPostTime);
-          console.log('item createdAt ', item.createdAt)
           if (initialLoad) {
             if (item.createdAt > latestPostTime) {
               latestPostTime = item.createdAt;
             }
             if (room === 'all') {
-              $('#chats').append($('<div class="username">' 
-                + $ESAPI.encoder().encodeForHTML(item.username)
-                + '</div><div class="message">' 
-                + $ESAPI.encoder().encodeForHTML(item.text)
-                + item.roomname
-                + '</div>'));
+              appendMessage(item);
             } else if (item.roomname === room) {
-              // console.log(item.text);
-              $('#chats').append($('<div class="username">' 
-                + $ESAPI.encoder().encodeForHTML(item.username)
-                + '</div><div class="message">' 
-                + $ESAPI.encoder().encodeForHTML(item.text)
-                + item.roomname
-                + '</div>'));
+              appendMessage(item);
             }
           } else if (item.createdAt > latestPostTime) {
             latestPostTime = item.createdAt;
-            console.log('reached update condition');
             if (room === 'all') {
-              $('#chats').prepend($('<div class="username">' 
-                + $ESAPI.encoder().encodeForHTML(item.username)
-                + '</div><div class="message">' 
-                + $ESAPI.encoder().encodeForHTML(item.text)
-                + item.roomname
-                + '</div>'));
+              prependMessage(item);
             } else if (item.roomname === room) {
-              // console.log(item.text + " 2nd?");
-              $('#chats').prepend($('<div class="username">' 
-                + $ESAPI.encoder().encodeForHTML(item.username)
-                + '</div><div class="message">' 
-                + $ESAPI.encoder().encodeForHTML(item.text)
-                + item.roomname
-                + '</div>'));
+              prependMessage(item);
             }
           }
         });
-        // console.log('latest:',latestPostTime);
-
         initialLoad = false;
       },
       error: function (data) {
@@ -136,10 +112,37 @@ function getval(sel) {
 }
 
 function appendMessage(item) {
-  $('#chats').append($('<div class="username">' 
+  if (friends[item.username]) {
+    $('#chats').append($('<div class="username">' 
+      + $ESAPI.encoder().encodeForHTML(item.username)
+      + '</div><div class="message friend">' 
+      + $ESAPI.encoder().encodeForHTML(item.text)
+      + '</div>'));
+  } else {
+    $('#chats').append($('<div class="username">' 
+      + $ESAPI.encoder().encodeForHTML(item.username)
+      + '</div><div class="message">' 
+      + $ESAPI.encoder().encodeForHTML(item.text)
+      + '</div>'));
+  }
+}
+
+function prependMessage(item) {
+  $('#chats').prepend($('<div class="username">' 
     + $ESAPI.encoder().encodeForHTML(item.username)
     + '</div><div class="message">' 
     + $ESAPI.encoder().encodeForHTML(item.text)
-    + item.roomname
     + '</div>'));
 }
+
+$(document).on('click','.username', function(){
+  var username = $(this)[0].textContent;
+  if (confirm('Add ' + username + ' as a friend?')) {
+    friends[username] = true;
+    $('#chats').empty();
+    initialLoad = true;
+    app.fetch();
+  } else {
+    return;
+  }
+});

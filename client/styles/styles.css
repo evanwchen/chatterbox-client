@@ -95,3 +95,7 @@ form input[type=text] {
     /*margin-left:10px;*/
     margin-bottom:10px;
 }
+
+.friend {
+    font-weight: 800;
+}

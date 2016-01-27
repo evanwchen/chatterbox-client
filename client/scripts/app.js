@@ -41,9 +41,11 @@ var app = {
       contentType: 'application/json',
       success: function (data) {
         _.each(data.results, function(item) {
-          if (chatRooms[item.roomname] === undefined && item.roomname !== undefined) {
-            chatRooms[item.roomname] = item.roomname;
-            $('.chatrooms').append('<option value="'+ item.roomname + '">' + item.roomname + '</option>');
+          var itemRoomName = $ESAPI.encoder().encodeForHTML(item.roomname);
+
+          if (chatRooms[itemRoomName] === undefined && itemRoomName !== undefined) {
+            chatRooms[itemRoomName] = itemRoomName;
+            $('.chatrooms').append('<option value="'+ itemRoomName + '">' + itemRoomName + '</option>');
           }
           if (initialLoad) {
             if (item.createdAt > latestPostTime) {
@@ -51,19 +53,22 @@ var app = {
             }
             if (room === 'all') {
               appendMessage(item);
-            } else if (item.roomname === room) {
+            } else if (itemRoomName === room) {
               appendMessage(item);
             }
           } else if (item.createdAt > latestPostTime) {
             latestPostTime = item.createdAt;
             if (room === 'all') {
+              app.startSpinner();
               prependMessage(item);
-            } else if (item.roomname === room) {
+            } else if (itemRoomName === room) {
+              app.startSpinner();
               prependMessage(item);
             }
           }
         });
         initialLoad = false;
+        app.stopSpinner();
       },
       error: function (data) {
         console.error('chatterbox: Failed to get message');
@@ -82,17 +87,27 @@ var app = {
   },
 
   changeRooms: function(roomName) {
-    room = roomName;
+    room = $ESAPI.encoder().encodeForHTML(roomName);
+    console.log(room);
     initialLoad = true;
     $('#chats').empty();
     $('.chatrooms').val(roomName);
     app.fetch();
+  },
+
+  startSpinner: function() {
+    $('.spinner').show();
+  },
+
+  stopSpinner: function() {
+    $('.spinner').fadeOut('slow');
   }
+
 };
 
 app.fetch();
 
-var processID = setInterval(app.fetch, 2000);
+var processID = setInterval(app.fetch, 3000);
 
 function post(form) {
   var msg = form.inputbox.value;
@@ -128,11 +143,19 @@ function appendMessage(item) {
 }
 
 function prependMessage(item) {
-  $('#chats').prepend($('<div class="username">' 
-    + $ESAPI.encoder().encodeForHTML(item.username)
-    + '</div><div class="message">' 
-    + $ESAPI.encoder().encodeForHTML(item.text)
-    + '</div>'));
+  if (friends[item.username]) {
+    $('#chats').prepend($('<div class="username">' 
+      + $ESAPI.encoder().encodeForHTML(item.username)
+      + '</div><div class="message friend">' 
+      + $ESAPI.encoder().encodeForHTML(item.text)
+      + '</div>'));
+  } else {
+    $('#chats').prepend($('<div class="username">' 
+      + $ESAPI.encoder().encodeForHTML(item.username)
+      + '</div><div class="message">' 
+      + $ESAPI.encoder().encodeForHTML(item.text)
+      + '</div>'));
+  }
 }
 
 $(document).on('click','.username', function(){

@@ -3,9 +3,13 @@ org.owasp.esapi.ESAPI.initialize();
 var app = {
   latestPostTime: "0",
   initialLoad: true,
-  chatRooms: {all: 'all'},
-  room: 'all',
+  chatRooms: {All: 'All'},
+  room: 'All',
   friends: {},
+  tabs: {
+    0: 'All',
+    n: 1
+  },
 
   init: function() {
     $(document).on('click','.username', function(){
@@ -18,6 +22,20 @@ var app = {
       } else {
         return;
       }
+    });
+
+    $(document).on('click','.newTab', function(){
+      $('.tabs').find('.currentTab').toggleClass('currentTab');
+      $('.tabs :nth-child(' + app.tabs.n + ')').after('<div class="tab clickTab currentTab">All</div>');
+      app.tabs[app.tabs.n] = 'All';
+      app.tabs.n++;
+    });
+
+    $(document).on('click','.clickTab', function(){
+      $('.tabs').find('.currentTab').toggleClass('currentTab');
+      $(this).toggleClass('currentTab');
+      var newRoom = $(this).text();
+      app.changeRooms(newRoom);
     });
 
     app.fetch();
@@ -58,14 +76,14 @@ var app = {
             if (item.createdAt > app.latestPostTime) {
               app.latestPostTime = item.createdAt;
             }
-            if (app.room === 'all') {
+            if (app.room === 'All') {
               app.appendMessage(item);
             } else if (itemRoomName === app.room) {
               app.appendMessage(item);
             }
           } else if (item.createdAt > app.latestPostTime) {
             app.latestPostTime = item.createdAt;
-            if (app.room === 'all') {
+            if (app.room === 'All') {
               app.startSpinner();
               app.prependMessage(item);
             } else if (itemRoomName === app.room) {
@@ -98,6 +116,7 @@ var app = {
     app.initialLoad = true;
     $('#chats').empty();
     $('.chatrooms').val(roomName);
+    $('.currentTab').text(roomName);
     app.fetch();
   },
 

@@ -25,7 +25,7 @@
     <div id="main">
       <h1>chatterbox</h1>
       Chatrooms:<select class="chatrooms" onchange="app.getval(this);">
-        <option value="all">All</option>
+        <option value="All">All</option>
       </select>
       <img class="spinner" src='images/spiffygif_46x46.gif'></img>
       <form>
@@ -33,8 +33,8 @@
         <input type="button" name="button" value="click" onClick="app.post(this.form)">
       </form>
       <div class="tabs">
-        <div class="tab tab0"></div>
-        <div class="tab newTab">New Tab</div>
+        <div class="tab clickTab tab0 currentTab">All</div>
+        <div class="tab newTab">+</div>
       </div>
     </div>
     <div id="chats"></div>

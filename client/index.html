@@ -24,15 +24,20 @@
   <body>
     <div id="main">
       <h1>chatterbox</h1>
-      Chatrooms:<select class="chatrooms" onchange="getval(this);">
+      Chatrooms:<select class="chatrooms" onchange="app.getval(this);">
         <option value="all">All</option>
       </select>
       <img class="spinner" src='images/spiffygif_46x46.gif'></img>
       <form>
         <input type="text" name="inputbox" placeholder="Post message here" value="">
-        <input type="button" name="button" value="click" onClick="post(this.form)">
+        <input type="button" name="button" value="click" onClick="app.post(this.form)">
       </form>
+      <div class="tabs">
+        <div class="tab tab0"></div>
+        <div class="tab newTab">New Tab</div>
+      </div>
     </div>
     <div id="chats"></div>
+    <script>$(function() { app.init(); });</script>
   </body>
 </html>

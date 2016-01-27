@@ -1,21 +1,29 @@
-var latestPostTime = "0";
-
-var initialLoad = true;
-
-var chatRooms = {
-  all: 'all'
-};
-
-var room = chatRooms.all;
-
-var friends = {};
-
-var filterFriends = true;
-
 org.owasp.esapi.ESAPI.initialize();
 
 var app = {
-  init: function() {},
+  latestPostTime: "0",
+  initialLoad: true,
+  chatRooms: {all: 'all'},
+  room: 'all',
+  friends: {},
+
+  init: function() {
+    $(document).on('click','.username', function(){
+      var username = $(this)[0].textContent;
+      if (confirm('Add ' + username + ' as a friend?')) {
+        app.friends[username] = true;
+        $('#chats').empty();
+        app.initialLoad = true;
+        app.fetch();
+      } else {
+        return;
+      }
+    });
+
+    app.fetch();
+    var processID = setInterval(app.fetch, 3000);
+
+  },
 
   send: function(message) {
     $.ajax({
@@ -24,7 +32,6 @@ var app = {
       data: JSON.stringify(message),
       contentType: 'application/json',
       success: function (data) {
-        //latestPostTime = data.createdAt;
         console.log("succes, data:",data);
       },
       error: function (data) {
@@ -43,31 +50,31 @@ var app = {
         _.each(data.results, function(item) {
           var itemRoomName = $ESAPI.encoder().encodeForHTML(item.roomname);
 
-          if (chatRooms[itemRoomName] === undefined && itemRoomName !== undefined) {
-            chatRooms[itemRoomName] = itemRoomName;
-            $('.chatrooms').append('<option value="'+ itemRoomName + '">' + itemRoomName + '</option>');
+          if (!app.chatRooms[itemRoomName] && itemRoomName) {
+            app.chatRooms[itemRoomName] = itemRoomName;
+            $('.chatrooms').append('<option value="'+ itemRoomName.slice(0,30) + '">' + itemRoomName.slice(0,30) + '</option>');
           }
-          if (initialLoad) {
-            if (item.createdAt > latestPostTime) {
-              latestPostTime = item.createdAt;
+          if (app.initialLoad) {
+            if (item.createdAt > app.latestPostTime) {
+              app.latestPostTime = item.createdAt;
             }
-            if (room === 'all') {
-              appendMessage(item);
-            } else if (itemRoomName === room) {
-              appendMessage(item);
+            if (app.room === 'all') {
+              app.appendMessage(item);
+            } else if (itemRoomName === app.room) {
+              app.appendMessage(item);
             }
-          } else if (item.createdAt > latestPostTime) {
-            latestPostTime = item.createdAt;
-            if (room === 'all') {
+          } else if (item.createdAt > app.latestPostTime) {
+            app.latestPostTime = item.createdAt;
+            if (app.room === 'all') {
               app.startSpinner();
-              prependMessage(item);
-            } else if (itemRoomName === room) {
+              app.prependMessage(item);
+            } else if (itemRoomName === app.room) {
               app.startSpinner();
-              prependMessage(item);
+              app.prependMessage(item);
             }
           }
         });
-        initialLoad = false;
+        app.initialLoad = false;
         app.stopSpinner();
       },
       error: function (data) {
@@ -87,9 +94,8 @@ var app = {
   },
 
   changeRooms: function(roomName) {
-    room = $ESAPI.encoder().encodeForHTML(roomName);
-    console.log(room);
-    initialLoad = true;
+    app.room = $ESAPI.encoder().encodeForHTML(roomName);
+    app.initialLoad = true;
     $('#chats').empty();
     $('.chatrooms').val(roomName);
     app.fetch();
@@ -101,71 +107,55 @@ var app = {
 
   stopSpinner: function() {
     $('.spinner').fadeOut('slow');
+  },
+
+  post: function(form) {
+    var msg = form.inputbox.value;
+    var username = window.location.search.slice(10);
+
+    var msgJSON = {
+      username: username, 
+      text: msg,
+      roomname: app.room
+    };
+
+    app.send(msgJSON);
+  },
+
+  getval: function(sel) {
+    app.changeRooms(sel.value);
+  }, 
+
+  appendMessage: function(item) {
+    if (app.friends[item.username]) {
+      $('#chats').append($('<div class="username">' + 
+        $ESAPI.encoder().encodeForHTML(item.username) +
+        '</div><div class="message friend">' + 
+        $ESAPI.encoder().encodeForHTML(item.text) + 
+        '</div>'));
+    } else {
+      $('#chats').append($('<div class="username">' + 
+        $ESAPI.encoder().encodeForHTML(item.username) +
+        '</div><div class="message">' + 
+        $ESAPI.encoder().encodeForHTML(item.text) + 
+        '</div>'));
+    }
+  },
+
+  prependMessage: function(item) {
+    if (app.friends[item.username]) {
+      $('#chats').prepend($('<div class="username">' + 
+        $ESAPI.encoder().encodeForHTML(item.username) +
+        '</div><div class="message friend">' +
+        $ESAPI.encoder().encodeForHTML(item.text) +
+        '</div>'));
+    } else {
+      $('#chats').prepend($('<div class="username">' + 
+        $ESAPI.encoder().encodeForHTML(item.username) +
+        '</div><div class="message">' +
+        $ESAPI.encoder().encodeForHTML(item.text) +
+        '</div>'));
+    }
   }
 
 };
-
-app.fetch();
-
-var processID = setInterval(app.fetch, 3000);
-
-function post(form) {
-  var msg = form.inputbox.value;
-  var username = window.location.search.slice(10);
-
-  var msgJSON = {
-    username: username, 
-    text: msg,
-    roomname: room
-  };
-
-  app.send(msgJSON);
-}
-
-function getval(sel) {
-  app.changeRooms(sel.value);
-}
-
-function appendMessage(item) {
-  if (friends[item.username]) {
-    $('#chats').append($('<div class="username">' 
-      + $ESAPI.encoder().encodeForHTML(item.username)
-      + '</div><div class="message friend">' 
-      + $ESAPI.encoder().encodeForHTML(item.text)
-      + '</div>'));
-  } else {
-    $('#chats').append($('<div class="username">' 
-      + $ESAPI.encoder().encodeForHTML(item.username)
-      + '</div><div class="message">' 
-      + $ESAPI.encoder().encodeForHTML(item.text)
-      + '</div>'));
-  }
-}
-
-function prependMessage(item) {
-  if (friends[item.username]) {
-    $('#chats').prepend($('<div class="username">' 
-      + $ESAPI.encoder().encodeForHTML(item.username)
-      + '</div><div class="message friend">' 
-      + $ESAPI.encoder().encodeForHTML(item.text)
-      + '</div>'));
-  } else {
-    $('#chats').prepend($('<div class="username">' 
-      + $ESAPI.encoder().encodeForHTML(item.username)
-      + '</div><div class="message">' 
-      + $ESAPI.encoder().encodeForHTML(item.text)
-      + '</div>'));
-  }
-}
-
-$(document).on('click','.username', function(){
-  var username = $(this)[0].textContent;
-  if (confirm('Add ' + username + ' as a friend?')) {
-    friends[username] = true;
-    $('#chats').empty();
-    initialLoad = true;
-    app.fetch();
-  } else {
-    return;
-  }
-});
